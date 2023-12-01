@@ -46,15 +46,14 @@ namespace Ventas_mensuales
             decimal ventaDecimal = decimal.Parse(venta) / 100;
 
             Console.WriteLine($"Fecha: {fechaFormateada}, ID: {id}, Monto: {ventaDecimal}, Letra: {letra}");
-
-            if (string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(id) && id == "   ")
             {
                 // Registro rechazado: Falta código de vendedor
                 InsertarRegistroRechazo(context, line, "Falta código de vendedor");
                 return;
             }
 
-      
+
 
             if (letra != "S" && letra != "N")
             {
@@ -63,8 +62,19 @@ namespace Ventas_mensuales
                 return;
             }
 
+            Parametria instanciaParametria = context.Parametria.FirstOrDefault()!;
+            //if (fechaFormateada != instanciaParametria) 
+            //{ }
+
             // Registro válido: Insertar en ventas_mensuales
             InsertarVentaMensual(context, fechaFormateada, id, ventaDecimal, letra);
+
+
+
+
+
+
+
         }
 
 
@@ -73,7 +83,7 @@ namespace Ventas_mensuales
             // Insertar el registro rechazado en la tabla de rechazos
             Rechazos rechazo = new Rechazos
             {
-                IdLineaRechazada = int.Parse(linea),
+                IdLineaRechazada = linea,
                 Motivo = motivoRechazo
             };
 
@@ -82,6 +92,7 @@ namespace Ventas_mensuales
         }
         static void InsertarVentaMensual(VentasMensualesDbContext context, DateTime fechaFormateada, string id, decimal venta, string letra)
         {
+            // Insertar el registros que pasarob el filtro en la tabla de ventas_mesuales
             VentasMensuales ventaMensual = new VentasMensuales
             {
                 FechaInforme = fechaFormateada,
@@ -107,8 +118,6 @@ namespace Ventas_mensuales
                 Console.WriteLine(mensaje);
             }
         }
-
-        
 
         static void ListarVendedoresNoSuperaron100000(VentasMensualesDbContext context)
         {

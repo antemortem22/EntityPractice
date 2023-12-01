@@ -19,13 +19,13 @@ namespace Ventas_mensuales
 
         public class Rechazos
         {
-            public int IdLineaRechazada { get; set; }
+            public string IdLineaRechazada { get; set; }
             public string Motivo { get; set; } 
         }
 
         public class Parametria
         {
-            public DateTime Fecha { get; set; }
+            public DateTime FechaProceso { get; set; }
         }
     }
 }
