@@ -19,7 +19,7 @@ namespace Ventas_mensuales
 
         public class Rechazos
         {
-            public int IdRechazo { get; set; }
+            public int IdLineaRechazada { get; set; }
             public string Motivo { get; set; } 
         }
 

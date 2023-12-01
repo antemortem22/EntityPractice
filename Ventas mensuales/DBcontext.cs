@@ -25,38 +25,36 @@ namespace Ventas_mensuales
 
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
-                //Config Entity to the table "VentasMensuales"
+                //Config Entity to table "VentasMensuales"
                 modelBuilder.Entity<VentasMensuales>(entity =>
                 {
                     entity.ToTable("ventas_mensuales");
 
-                    entity.HasKey(vm => new { vm.IdVendedor, vm.FechaInforme });
-
-                    entity.Property(vm => vm.IdVendedor).HasMaxLength(3).IsRequired();
-                    entity.Property(vm => vm.FechaInforme).IsRequired();
-                    entity.Property(vm => vm.Venta).HasColumnType("decimal(8,2)").IsRequired();
-                    entity.Property(vm => vm.EmpresaGrande).HasMaxLength(1).IsRequired();
+                    entity.Property(vm => vm.IdVendedor)
+                        .HasColumnName("id_vendedor");
+                    entity.Property(vm => vm.FechaInforme)
+                        .HasColumnName("fecha_informe");
+                    entity.Property(vm => vm.Venta)
+                        .HasColumnName("venta");
+                    entity.Property(vm => vm.EmpresaGrande)
+                        .HasColumnName("empresa_grande");
                 });
 
-                // Config Entity to the table "Rechazos"
+                // Config Entity to table "Rechazos"
                 modelBuilder.Entity<Rechazos>(entity =>
                 {
                     entity.ToTable("rechazos");
 
-                    entity.HasKey(r => r.IdRechazo);
+                    entity.Property(r => r.IdLineaRechazada)
+                        .HasColumnName("id_linea_rechazada");
 
-                    entity.Property(r => r.Motivo).HasMaxLength(100).IsRequired();
+                    entity.Property(r => r.Motivo)
+                        .HasColumnName("motivo");
                 });
 
-                // Config Entity to the table "Parametria"
-                modelBuilder.Entity<Parametria>(entity =>
-                {
-                    entity.ToTable("parametria");
-
-                    entity.HasKey(p => p.Fecha);
-
-                    entity.Property(p => p.Fecha).IsRequired();
-                });
+                // Config Entity to table "Parametria"
+                modelBuilder.Entity<Parametria>().HasNoKey();
+               
 
                 base.OnModelCreating(modelBuilder);
 
