@@ -25,8 +25,8 @@ namespace Ventas_mensuales
                 ParseLine(line, context);
             }
 
-            ListarVendedoresSuperaron100000(context);
-            ListarVendedoresNoSuperaron100000(context);
+            ListarVendedoresSuperaronMonto(context);
+            ListarVendedoresNoSuperaronMonto(context);
             ListarVendedoresVendieronAEmpresaGrande(context);
             ListarRechazos(context);
 
@@ -34,10 +34,10 @@ namespace Ventas_mensuales
 
         static void ParseLine(string line, VentasMensualesDbContext context)
         {
-            string fecha = line.Substring(0, 8);
-            string id = line.Substring(8, 3);
-            string venta = line.Substring(11, 11);
-            string letra = line.Substring(22, 1);
+            string fecha = line.Substring(0, 8).Trim();
+            string id = line.Substring(8, 3).Trim();
+            string venta = line.Substring(11, 11).Trim();
+            string letra = line.Substring(22, 1).Trim();
 
 
             string fecha2 = $"{fecha.Substring(0, 4)}-{fecha.Substring(4, 2)}-{fecha.Substring(6, 2)}";
@@ -46,7 +46,7 @@ namespace Ventas_mensuales
             decimal ventaDecimal = decimal.Parse(venta) / 100;
 
             Console.WriteLine($"Fecha: {fechaFormateada}, ID: {id}, Monto: {ventaDecimal}, Letra: {letra}");
-            if (string.IsNullOrWhiteSpace(id) && id == "   ")
+            if (string.IsNullOrWhiteSpace(id))
             {
                 // Registro rechazado: Falta código de vendedor
                 InsertarRegistroRechazo(context, line, "Falta código de vendedor");
@@ -62,18 +62,20 @@ namespace Ventas_mensuales
                 return;
             }
 
-            Parametria instanciaParametria = context.Parametria.FirstOrDefault()!;
-            //if (fechaFormateada != instanciaParametria) 
-            //{ }
+            DateTime fechaParametria = context.Parametria
+                                  .Select(p => p.FechaProceso)
+                                  .First();
+
+            
+            if (fechaFormateada != fechaParametria) 
+            {
+                InsertarRegistroRechazo(context, line, "La fecha del mes no corresponde con la fecha paremetrizada");
+                return;
+            }
+           
 
             // Registro válido: Insertar en ventas_mensuales
             InsertarVentaMensual(context, fechaFormateada, id, ventaDecimal, letra);
-
-
-
-
-
-
 
         }
 
@@ -105,31 +107,43 @@ namespace Ventas_mensuales
             context.SaveChanges();
         }
 
-        static void ListarVendedoresSuperaron100000(VentasMensualesDbContext context)
+        static void ListarVendedoresSuperaronMonto(VentasMensualesDbContext context)
         {
-            var vendedoresSuperaron100000 = context.VentasMensuales
+            var vendedoresSuperaronMonto = context.VentasMensuales
                 .Where(venta => venta.Venta > 100000)
-                .Select(venta => $"El vendedor {venta.IdVendedor} vendió {venta.Venta}")
+                .GroupBy(venta => venta.IdVendedor)
+                .Select(group => new
+                {
+                    IdVendedor = group.Key,
+                    TotalVentas = group.Sum(venta => venta.Venta)
+                })
                 .ToList();
 
-            Console.WriteLine("Vendedores que superaron los 100.000:");
-            foreach (var mensaje in vendedoresSuperaron100000)
+            Console.WriteLine("\n /////////////////////////////////");
+            Console.WriteLine("Vendedores que superaron los 100.000 agrupados por IdVendedor:");
+            foreach (var resultado in vendedoresSuperaronMonto)
             {
-                Console.WriteLine(mensaje);
+                Console.WriteLine($"El vendedor {resultado.IdVendedor} vendió un total de {resultado.TotalVentas}");
             }
         }
 
-        static void ListarVendedoresNoSuperaron100000(VentasMensualesDbContext context)
+        static void ListarVendedoresNoSuperaronMonto(VentasMensualesDbContext context)
         {
-            var vendedoresNoSuperaron100000 = context.VentasMensuales
+            var vendedoresNoSuperaronMonto = context.VentasMensuales
                 .Where(venta => venta.Venta <= 100000)
-                .Select(venta => $"El vendedor {venta.IdVendedor} vendió {venta.Venta}")
+                .GroupBy(venta => venta.IdVendedor)
+                .Select(group => new
+                {
+                    IdVendedor = group.Key,
+                    TotalVentas = group.Sum(venta => venta.Venta)
+                })
                 .ToList();
 
+            Console.WriteLine("\n /////////////////////////////////");
             Console.WriteLine("Vendedores que no superaron los 100.000:");
-            foreach (var mensaje in vendedoresNoSuperaron100000)
+            foreach (var resultado in vendedoresNoSuperaronMonto)
             {
-                Console.WriteLine(mensaje);
+                Console.WriteLine($"El vendedor {resultado.IdVendedor} vendió un total de {resultado.TotalVentas}");
             }
         }
 
@@ -141,6 +155,7 @@ namespace Ventas_mensuales
                 .Distinct()
                 .ToList();
 
+            Console.WriteLine("\n /////////////////////////////////");
             Console.WriteLine("Vendedores que vendieron al menos una vez a una empresa grande:");
             foreach (var codigoVendedor in vendedoresAEmpresaGrande)
             {
@@ -154,6 +169,7 @@ namespace Ventas_mensuales
                 .Select(rechazo => $"{rechazo.Motivo}: {rechazo.IdLineaRechazada}")
                 .ToList();
 
+            Console.WriteLine("\n /////////////////////////////////");
             Console.WriteLine("Registros rechazados:");
             foreach (var mensaje in registrosRechazados)
             {
